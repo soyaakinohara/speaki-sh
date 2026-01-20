@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ===== 設定 =====
-PLAYER="mpg123"   # mp3なら mpg123
+PLAYER="mpg123 -q"   # mp3なら mpg123
 VOICES=(./v{1..9}.mp3)
 
 RANDOM_MODE=0
