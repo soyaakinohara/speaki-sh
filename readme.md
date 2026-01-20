@@ -6,6 +6,7 @@
 このリポをクローン  
 ```
 sudo chmod +x speaki.sh  
+sudo apt install mpg123
 ./speaki.sh  
 ```
 
