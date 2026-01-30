@@ -9,6 +9,7 @@ sudo chmod +x speaki.sh
 sudo apt install mpg123
 ./speaki.sh  
 ```
+macの場合brew install mpg123
 
 コマンドとして設定するには  
 `sudo ln -s /path to speaki/speaki.sh /usr/local/bin/speaki`  

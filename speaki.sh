@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
-# ===== 設定 =====
-PLAYER="mpg123 -q"   # mp3なら mpg123
+# ===== OS判別とプレイヤー設定 =====
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOSの場合
+  PLAYER="afplay"
+else
+  # Linux（またはその他）の場合
+  PLAYER="mpg123 -q"
+fi
+
 VOICES=(./v{1..9}.mp3)
-
-RANDOM_MODE=0
-RANDOM_PID=""
-
-RAINBOW=0
-RAINBOW_PID=""
 
 # ===== AA =====
 AA=$(cat <<'EOF'
