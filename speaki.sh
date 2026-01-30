@@ -1,17 +1,26 @@
 #!/usr/bin/env bash
 
+# ===== 設定・初期化（エラー防止） =====
+RANDOM_MODE=0
+RAINBOW=0
+RANDOM_PID=""
+RAINBOW_PID=""
+KEEP_ALIVE_PID=""
+
 # ===== OS判別とプレイヤー設定 =====
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOSの場合
   PLAYER="afplay"
+  # macOS特有の「最初が途切れる」現象を防ぐための暖気運転
+  (while true; do afplay /System/Library/Sounds/Tink.aiff -v 0; sleep 1; done) &
+  KEEP_ALIVE_PID=$!
 else
-  # Linux（またはその他）の場合
   PLAYER="mpg123 -q"
 fi
 
 VOICES=(./v{1..9}.mp3)
 
 # ===== AA =====
+# (AAは手動で貼るとのことですので、ここでは省略します。この下に貼り付けてください)
 AA=$(cat <<'EOF'
 ⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⠄⠄⡀⠄⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀
 ⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⠠⢐⣠⡤⠶⢛⣛⡭⢭⡭⠭⠭⢍⣙⣛⣛⠶⠤⣄⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀
@@ -53,61 +62,50 @@ EOF
 clear
 echo "$AA"
 
-# ===== 虹色グラデーションAA（macOS最適化版）=====
+# ===== 虹色グラデーションAA =====
 rainbow_aa() {
   local frame=0
   local start_row=1
-  local height
-  height=$(echo "$AA" | wc -l)
-
-  # 256色モード用のレインボーカラーパレットを事前に定義（計算負荷軽減）
   local colors=(196 202 208 214 220 226 190 154 118 82 46 47 48 49 51 45 39 33 27 21 57 93 129 165 201 197)
   local num_colors=${#colors[@]}
 
   while true; do
-    # カーソルを上部に戻す
     printf "\e[%d;1H" $start_row
-
     local y=0
     while IFS= read -r line; do
       local out=""
       local len=${#line}
-      
       for ((i=0; i<len; i++)); do
         char="${line:i:1}"
         if [[ "$char" == " " || "$char" == "　" ]]; then
           out+="$char"
         else
-          # 色のインデックスを計算
           local color_idx=$(( (frame + i + y*2) % num_colors ))
-          local color=${colors[$color_idx]}
-          out+="\e[38;5;${color}m${char}"
+          out+="\e[38;5;${colors[$color_idx]}m${char}"
         fi
       done
-      
-      # 1行まとめて出力（高速化）
       printf "%b\e[0m\n" "$out"
       ((y++))
     done <<< "$AA"
-
     ((frame++))
     sleep 0.03
   done
 }
 
-# ランダム
+# ランダム再生ループ
 random_loop() {
   while true; do
+    # 暖気が効いているので、ここでは普通に再生してOKです
     $PLAYER "${VOICES[$((RANDOM % 9))]}" >/dev/null 2>&1
     sleep 0.2
   done
 }
 
-
 # ===== 後始末 =====
 cleanup() {
   [ -n "$RAINBOW_PID" ] && kill "$RAINBOW_PID" 2>/dev/null
   [ -n "$RANDOM_PID" ] && kill "$RANDOM_PID" 2>/dev/null
+  [ -n "$KEEP_ALIVE_PID" ] && kill "$KEEP_ALIVE_PID" 2>/dev/null
   tput cnorm
   exit
 }
