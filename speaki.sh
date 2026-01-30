@@ -52,44 +52,45 @@ EOF
 clear
 echo "$AA"
 
-# ===== 虹色グラデーションAA（固定位置）=====
+# ===== 虹色グラデーションAA（macOS最適化版）=====
 rainbow_aa() {
   local frame=0
   local start_row=1
-
-  # AAの高さを取得
   local height
   height=$(echo "$AA" | wc -l)
 
+  # 256色モード用のレインボーカラーパレットを事前に定義（計算負荷軽減）
+  local colors=(196 202 208 214 220 226 190 154 118 82 46 47 48 49 51 45 39 33 27 21 57 93 129 165 201 197)
+  local num_colors=${#colors[@]}
+
   while true; do
-    tput cup $start_row 0
+    # カーソルを上部に戻す
+    printf "\e[%d;1H" $start_row
 
     local y=0
     while IFS= read -r line; do
-      local x=0
       local out=""
-
-      for ((i=0; i<${#line}; i++)); do
-        ch="${line:i:1}"
-
-        # 色相を位置＋時間でずらす
-        local t=$((frame + x*3 + y*10))
-
-        # sin波でRGB生成（0–255）
-        r=$(awk "BEGIN{print int((sin(($t)*0.1)+1)*127)}")
-        g=$(awk "BEGIN{print int((sin(($t)*0.1+2)+1)*127)}")
-        b=$(awk "BEGIN{print int((sin(($t)*0.1+4)+1)*127)}")
-
-        out+="\e[38;2;${r};${g};${b}m${ch}"
-        ((x++))
+      local len=${#line}
+      
+      for ((i=0; i<len; i++)); do
+        char="${line:i:1}"
+        if [[ "$char" == " " || "$char" == "　" ]]; then
+          out+="$char"
+        else
+          # 色のインデックスを計算
+          local color_idx=$(( (frame + i + y*2) % num_colors ))
+          local color=${colors[$color_idx]}
+          out+="\e[38;5;${color}m${char}"
+        fi
       done
-
-      echo -e "$out\e[0m"
+      
+      # 1行まとめて出力（高速化）
+      printf "%b\e[0m\n" "$out"
       ((y++))
     done <<< "$AA"
 
     ((frame++))
-    sleep 0.05
+    sleep 0.03
   done
 }
 
